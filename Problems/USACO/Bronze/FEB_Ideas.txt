@@ -1,0 +1,77 @@
+# BFE:
+BBE => 1
+BEE => 1
+
+# BFB:
+BBB => 2
+BEB => 0
+
+# BFFFE: 1, 3
+BBBBE => 3
+BBBEE => 3
+
+BBEBE => 1
+BBEEE => 3
+
+BEBBE => 1
+BEBEE => 1
+BEEBE => 1
+BEEEE => 3
+
+
+# BFFFB: 4, 2, 0
+BBBBB => 4
+BBBEB => 2
+BBEBB => 2
+BBEEB => 2
+BEBBB => 2
+BEBEB => 0
+BEEEB => 2
+
+
+# BFFFFB: 5
+BBBBBB => 5
+BBBBEB => 3
+BBBEBB => 3
+BBBEEB => 3
+BBEBBB => 3
+BBEBEB => 1
+BBEEEB => 3
+...
+
+# BFFFFE: 0
+BBBBBE => 4
+BBBBEE => 4
+BBBEBE => 2
+
+
+
+Same sides:
+2F => 1, 3
+3F => 0, 2, 4
+4F => 1, 3, 5
+..
+5F => 0, 2, 4, 6
+6F => 1, 3, 5, 7
+...
+
+Different sides:
+// 2F = 0, 2
+3F = 1, 3
+4F = 0, 2, 4
+5F = 1, 3, 5
+NF = (same side)[(N - 1)F]
+
+
+
+
+Missing one side:
+
+BFF: 0, 1, 2
+BFFF: 0, 1, 2, 3
+B[N]F: 0, 1, ..., N
+
+Missing both sides:
+FF: 0, 1
+FFF: 0, 1, 2
+[N]F: 0, 1, ..., N - 1
