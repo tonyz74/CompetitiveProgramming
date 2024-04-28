@@ -22,7 +22,7 @@ void dfs(int x) {
         if (group_of[conn] == 0) {
             dfs(conn);
         }
-    } 
+    }
 }
 
 int main(void) {
@@ -33,7 +33,7 @@ int main(void) {
 
         graph[A[i]].push_back(B[i]);
         graph[B[i]].push_back(A[i]);
-    } 
+    }
 
     for (int i = 1; i <= N; i++) {
         if (group_of[i] == 0) {
