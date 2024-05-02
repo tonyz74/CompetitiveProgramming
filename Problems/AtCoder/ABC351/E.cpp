@@ -1,71 +1,9 @@
-// JUST ROTATE INSTEAD. DON'T BE FOOLED BY AN APPARENTLY SIMPLE
-// EQUATION OF MAX AND MIN AT THE START. WE WOULD RATHER HAVE ADDITION.
-
-// NOTE: This program is incorrect.
-
 #include <iostream>
 #include <vector>
 #include <algorithm>
 
-using i64 = long long;
-
-using namespace std;
-#include <iostream>
-#include <vector>
-#include <cassert>
-
 using namespace std;
 using i64 = long long;
-
-#define mid ((h + t) / 2)
-
-struct segtree {
-    i64 len;
-    vector<i64> v;
-
-    segtree(i64 n) {
-        len = n;
-        v.resize(4 * n + 7);
-    }
-
-    void pull(i64 x) {
-        v[x] = v[x * 2] + v[x * 2 + 1];
-    }
-
-    void build(i64 x, i64 h, i64 t, const vector<i64>& iv) {
-        if (h == t) {
-            v[x] = iv[h];
-            return;
-        }
-
-        build(x * 2, h, mid, iv);
-        build(x * 2 + 1, mid + 1, t, iv);
-        pull(x);
-    }
-
-    void point_set_zero(i64 x, i64 h, i64 t, i64 pos) {
-        if (h == t) {
-            v[x] = 0;
-            return;
-        }
-
-        if (pos <= mid) point_set_zero(x * 2, h, mid, pos);
-        else point_set_zero(x * 2 + 1, mid + 1, t, pos);
-        pull(x);
-    }
-
-    i64 range_query(i64 x, i64 h, i64 t, i64 h1, i64 t1) {
-        if (h1 <= h && t <= t1) {
-            return v[x];
-        }
-
-        i64 merged = 0;
-        if (h1 <= mid) merged += range_query(x * 2, h, mid, h1, t1);
-        if (t1 > mid) merged += range_query(x * 2 + 1, mid + 1, t, h1, t1);
-
-        return merged;
-    }
-};
 
 struct pt {
     i64 x = 0, y = 0;
@@ -77,102 +15,58 @@ struct pt {
     }
 };
 
-bool by_x(const pt& lhs, const pt& rhs) {
-    return make_pair(lhs.x, lhs.y) < make_pair(rhs.x, rhs.y);
-}
-
-bool by_y(const pt& lhs, const pt& rhs) {
-    return make_pair(lhs.y, lhs.x) < make_pair(rhs.y, rhs.x);
-}
 
 i64 calc(i64 N, vector<pt> V) {
     if (N == 0) return 0;
 
-    i64 ans = 0;
-    vector<pair<i64, pt> > diff(N + 1);
-
+    // rotate all by 45 degrees, scale by sqrt(2)
+    vector<pt> rot(N + 1);
     for (i64 i = 1; i <= N; i++) {
-        // y - x
-        diff[i] = make_pair(V[i].y - V[i].x, V[i]);
+        rot[i].x = V[i].x + V[i].y;
+        rot[i].y = V[i].y - V[i].x;
     }
 
-    std::sort(diff.begin() + 1, diff.end());
-    vector<i64> diff_vals(N + 1);
+    vector<i64> x_vals(N + 1);
+    vector<i64> y_vals(N + 1);
+
     for (i64 i = 1; i <= N; i++) {
-        diff_vals[i] = diff[i].first;
+        x_vals[i] = rot[i].x;
+        y_vals[i] = rot[i].y;
     }
 
-    vector<i64> all_ones(N + 1, 1);
+    auto work = [&] (vector<i64> in) {
+        i64 res = 0;
 
-    vector<pair<pt, i64> > diff_idx(N + 1);
-    for (i64 i = 1; i <= N; i++) {
-        diff_idx[i].first = diff[i].second;
-        diff_idx[i].second = i;
-    }
-
-    {
-        segtree sums(N);
-        segtree presence(N);
-        presence.build(1, 1, N, all_ones);
-        {
-            vector<i64> x_vals(N + 1);
-            for (i64 i = 1; i <= N; i++) {
-                x_vals[i] = diff[i].second.x;
-            }
-            sums.build(1, 1, N, x_vals);
+        std::sort(in.begin() + 1, in.end());
+        vector<i64> pfx(N + 1);
+        for (i64 i = 1; i <= N; i++) {
+            pfx[i] = pfx[i - 1] + in[i];
         }
-
-        std::sort(diff_idx.begin() + 1, diff_idx.end(), [&] (const auto& a, const auto& b) {
-            return by_x(a.first, b.first);
-        });
 
         for (i64 i = 1; i <= N; i++) {
-            i64 c = diff_idx[i].first.y - diff_idx[i].first.x;
-            i64 srch = std::lower_bound(diff_vals.begin() + 1, diff_vals.end(), c) - diff_vals.begin();
+            i64 srch = std::lower_bound(in.begin() + 1, in.end(), in[i]) - in.begin();
+            i64 n_gteq = N - srch + 1;
+            i64 n_lt = N - n_gteq;
 
-            i64 xlen = srch - 1;
-            if (xlen != 0) {
-                i64 range_query = sums.range_query(1, 1, N, 1, xlen);
-                i64 n_active = presence.range_query(1, 1, N, 1, xlen);
-                ans += range_query - n_active * diff_idx[i].first.x;
+            if (n_gteq > 0) {
+                res += (pfx[N] - pfx[srch - 1]) - n_gteq * in[i];
             }
-            sums.point_set_zero(1, 1, N, diff_idx[i].second);
-            presence.point_set_zero(1, 1, N, diff_idx[i].second);
-        }
-    }
 
-    {
-        segtree sums(N);
-        segtree presence(N);
-        presence.build(1, 1, N, all_ones);
-        {
-            vector<i64> y_vals(N + 1);
-            for (i64 i = 1; i <= N; i++) {
-                y_vals[i] = diff[i].second.y;
+            if (n_lt > 0) {
+                res += n_lt * in[i] - pfx[srch - 1];
             }
-            sums.build(1, 1, N, y_vals);
         }
 
-        std::sort(diff_idx.begin() + 1, diff_idx.end(), [&] (const auto& a, const auto& b) {
-            return by_y(a.first, b.first);
-        });
+        return res;
+    };
 
-        for (i64 i = 1; i <= N; i++) {
-            i64 c = diff_idx[i].first.y - diff_idx[i].first.x;
-            i64 srch = std::lower_bound(diff_vals.begin() + 1, diff_vals.end(), c) - diff_vals.begin();
-
-            i64 ylen = N - srch + 1;
-            if (ylen != 0) {
-                i64 range_query = sums.range_query(1, 1, N, srch, N);
-                i64 n_active = presence.range_query(1, 1, N, srch, N);
-                ans += range_query - n_active * diff_idx[i].first.y;
-            }
-            sums.point_set_zero(1, 1, N, diff_idx[i].second);
-            presence.point_set_zero(1, 1, N, diff_idx[i].second);
-        }
-    }
-
-    return ans;
+    // divide final answer by 4. Reason:
+    // * 1/2 to correct for scale.
+    // * 1/2 to correct for double-counting.
+    i64 x_sum = work(x_vals) / 2;
+    i64 y_sum = work(y_vals) / 2;
+    // printf("%lld %lld\n", x_sum, y_sum);
+    return (x_sum + y_sum) / 2;
 }
 
 int main(void) {
